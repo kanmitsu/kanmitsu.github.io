@@ -61,14 +61,25 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    Promise.all([
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            return caches.delete(cacheName);
+          })
+        );
+      }),
+      clients.claim()
+    ])
+  );
 });
 
 self.addEventListener('message', async (event) => {
   if (event.data.type === 'SET_PASSWORD') {
     try {
-      // キャッシュを回避するために cache: 'no-store' を使用
-      const response = await fetch('encrypted-app.bin', { cache: 'no-store' });
+      // キャッシュを回避するために cache: 'no-store' とタイムスタンプを使用
+      const response = await fetch('encrypted-app.bin?t=' + Date.now(), { cache: 'no-store' });
       if (!response.ok) throw new Error('暗号化データが見つかりません。');
       const buffer = await response.arrayBuffer();
       assets = await decrypt(buffer, event.data.password);
