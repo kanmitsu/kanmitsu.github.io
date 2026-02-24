@@ -67,7 +67,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('message', async (event) => {
   if (event.data.type === 'SET_PASSWORD') {
     try {
-      const response = await fetch('encrypted-app.bin');
+      // キャッシュを回避するために cache: 'no-store' を使用
+      const response = await fetch('encrypted-app.bin', { cache: 'no-store' });
       if (!response.ok) throw new Error('暗号化データが見つかりません。');
       const buffer = await response.arrayBuffer();
       assets = await decrypt(buffer, event.data.password);
